@@ -21,3 +21,5 @@ day09-data.zip
 .idea/
 .graphifyignore
 AGENTS.md
+
+/dataset/day09-data.zip

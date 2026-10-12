@@ -68,14 +68,14 @@ Vì sao `dataset_version` là **băm nội dung** chứ không phải ngày gi�
 ### Câu 8
 Đọc phần `lineage` trong `manifest.json` của dataset bạn. Trả lời "dataset này được tạo từ dữ liệu nào?" bằng chính nội dung đó. Nếu một người hỏi 3 tháng sau, thông tin nào giúp tái tạo lại đúng dataset này?
 
-Manifest cho version `ea0aed65a2e3` cần được đối chiếu trực tiếp sau lần chạy cuối: phần `lineage` liệt kê version của các bảng Bronze/Silver và SHA-256 từng video. Cùng với MSSV, luật chia trip, luật lọc frame, hash manifest và các bảng upstream có version, các thông tin này cho phép kiểm tra và tái tạo chính xác dataset thay vì chỉ dựa vào ngày tạo.
+Manifest version `ea0aed65a2e3` ghi lineage cụ thể: `bronze.raw_telemetry_a=0`, `bronze.raw_telemetry_b=0`, `bronze.trips_raw=0`, `bronze.video_files=1`, `silver.frames=25`, `silver.telemetry=0`, `silver.frames_flagged=0`, `silver.frame_telemetry=0`. Hai video nguồn có SHA-256: drive A `636ba1a98dfc5ba665d1c935e1d2064e69f4df360ff9ffbd15795957d5e7e9aa`, drive B `bfa62703f645ff77a8578ae3fc74a00881140d38a404d43c8e2af265bbee9fdc`. Manifest cũng ghi luật loại `is_black`, `is_blurry`, `is_near_dup`, `not sync_ok`, cách chia trip theo drive/MD5 order và SHA-256 manifest `93cf68a98b9532d429b03955c765d76470f32e69e3053c4e2dc96d96cf115fdf`. Những version bảng, hash video, MSSV, luật lọc/chia và hash manifest cho phép truy nguồn và tái tạo dataset.
 
 ## Bước 5 · Điều phối và phục vụ
 
 ### Câu 9
 Mô tả chính xác điều xảy ra khi trip của bạn sập rồi chạy lại: bao nhiêu task chuyển đỏ, bao nhiêu task `upstream_failed`, bạn clear gì, dữ liệu có nhân đôi không, `dataset_version` có đổi không? Bằng chứng (ảnh, số) là gì?
 
-Run Airflow dùng trip `trip-07900`, map index 21, và log có `simulated crash while extracting trip-07900`. Lúc lỗi có 1 task `silver_frames` đỏ và 7 task downstream `upstream_failed`. Tôi clear đúng task đỏ; map index 21 chạy lại thành công, không phải chạy lại 26 task trích frame. Tuy nhiên run hiện vẫn `failed` vì 7 task downstream chưa tự tiếp tục; tôi đang giữ chúng nguyên trạng theo chỉ dẫn clear task đỏ. Version Gold trước lỗi là `ea0aed65a2e3`; chưa thể kết luận DAG đã publish lại version sau retry cho tới khi downstream chạy xong.
+Run Airflow dùng trip `trip-07900`, map index 21; log của lần đầu có `simulated crash while extracting trip-07900`. Khi lỗi, đúng 1 task `silver_frames` chuyển `failed` và 7 task downstream thành `upstream_failed`. Tôi clear task lỗi; map index 21 retry thành công, các task trích 25 trip còn lại không phải chạy lại. Bảy task downstream vẫn `upstream_failed`, nên sau khi được cho phép tôi clear chúng để Airflow tiếp tục; DAG cuối cùng chuyển `success`. Kiểm tra sau đó cho thấy export giữ `dataset_version=ea0aed65a2e3`, 1.019 frame (748/142/129), và lượt chạy cuối từ lake trống đạt 27/27. Không có frame bị nhân đôi trong kết quả cuối. Bằng chứng số: trip `trip-07900`, map index 21; trạng thái cuối DAG `success`; dataset version và số frame không đổi. Ảnh log lỗi và Graph trước/sau cần có trong `report/screenshots/`.
 
 ### Câu 10
 Nâng từ 2 drive lên **500 xe mỗi ngày**: ba thành phần nào của pipeline này sẽ vỡ đầu tiên, và bạn thay bằng gì (nối với slide 12, 22, 23)?
